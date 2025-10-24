@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light Stick Movie Sync Controller</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #111827;
+      color: white;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1152px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 30px;
+      font-weight: bold;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card {
+      background-color: #1f2937;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+
+    .flex-1 {
+      flex: 1;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      background-color: #374151;
+      border: 1px solid #4b5563;
+      border-radius: 4px;
+      color: white;
+      font-size: 14px;
+    }
+
+    input[type="color"] {
+      width: 100%;
+      height: 40px;
+      background-color: #374151;
+      border: 1px solid #4b5563;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-blue {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .btn-blue:hover:not(:disabled) {
+      background-color: #1d4ed8;
+    }
+
+    .btn-green {
+      background-color: #16a34a;
+      color: white;
+    }
+
+    .btn-green:hover:not(:disabled) {
+      background-color: #15803d;
+    }
+
+    .btn-purple {
+      background-color: #9333ea;
+      color: white;
+    }
+
+    .btn-purple:hover {
+      background-color: #7e22ce;
+    }
+
+    .btn-gray {
+      background-color: #4b5563;
+      color: white;
+    }
+
+    .btn-gray:hover {
+      background-color: #374151;
+    }
+
+    .btn-red:hover {
+      background-color: #dc2626;
+    }
+
+    .btn-orange {
+      background-color: #ea580c;
+      color: white;
+    }
+
+    .btn-orange:hover {
+      background-color: #c2410c;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 768px) {
+      .grid-md-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .grid-md-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .items-end {
+      align-items: flex-end;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .justify-center {
+      justify-content: center;
+    }
+
+    .ml-auto {
+      margin-left: auto;
+    }
+
+    .status-connected {
+      color: #4ade80;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      background-color: #374151;
+      border-radius: 9999px;
+      height: 8px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .progress-fill {
+      background-color: #3b82f6;
+      height: 8px;
+      border-radius: 9999px;
+      transition: width 0.1s;
+    }
+
+    .timecode {
+      font-size: 20px;
+      font-family: 'Courier New', monospace;
+      margin-left: auto;
+    }
+
+    .sequence-list {
+      max-height: 384px;
+      overflow-y: auto;
+    }
+
+    .sequence-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background-color: #374151;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .sequence-item:hover {
+      background-color: #4b5563;
+    }
+
+    .sequence-item.active {
+      background-color: #1e3a8a;
+      border: 1px solid #3b82f6;
+    }
+
+    .sequence-item.selected {
+      background-color: #7c2d12;
+      border: 2px solid #ea580c;
+    }
+
+    .color-preview {
+      width: 48px;
+      height: 32px;
+      border-radius: 4px;
+      border: 1px solid #4b5563;
+    }
+
+    .empty-state {
+      color: #9ca3af;
+      text-align: center;
+      padding: 32px 0;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      padding: 8px 16px;
+      background-color: #2563eb;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .file-label:hover {
+      background-color: #1d4ed8;
+    }
+
+    .device-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background-color: #374151;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .device-item.connected {
+      background-color: #064e3b;
+      border: 1px solid #10b981;
+    }
+
+    .device-name {
+      font-weight: 600;
+    }
+
+    .device-ip {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .saved-sequence-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background-color: #374151;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .saved-sequence-item.active {
+      background-color: #1e3a8a;
+      border: 1px solid #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Light Stick Movie Sync Controller</h1>
+
+    <!-- ESP32 Devices -->
+    <div class="card">
+      <h2>
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+        </svg>
+        ESP32 Devices
+      </h2>
+      <div class="flex" style="margin-bottom: 12px;">
+        <input type="text" id="deviceName" placeholder="Device Name">
+        <input type="text" id="deviceIP" placeholder="IP Address (e.g., 192.168.1.100)">
+        <button class="btn-green" onclick="addDevice()">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Device
+        </button>
+      </div>
+      <div id="deviceList"></div>
+      <div class="flex" style="margin-top: 12px;">
+        <button class="btn-blue" onclick="testAllConnections()">Test All Connections</button>
+      </div>
+    </div>
+
+    <!-- Save/Load Sequences -->
+    <div class="card">
+      <h2>
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+        </svg>
+        Save/Load Sequences
+      </h2>
+      <div class="flex" style="margin-bottom: 12px;">
+        <input type="text" id="sequenceName" placeholder="Sequence Name">
+        <button class="btn-green" onclick="saveCurrentSequence()">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+          Save Current
+        </button>
+      </div>
+      <div id="savedSequencesList"></div>
+    </div>
+
+    <!-- Add New Entry -->
+    <div class="card">
+      <h2>
+        <span id="entryModeTitle">Add Sequence Entry</span>
+        <span id="editingIndicator" style="color: #ea580c; margin-left: 8px; display: none;">(Editing)</span>
+      </h2>
+      <div class="grid grid-md-4">
+        <div>
+          <label>Timecode (HH:MM:SS.mmm)</label>
+          <input type="text" id="timecode" value="00:00:00.000" placeholder="00:00:00.000">
+        </div>
+        <div>
+          <label>Color</label>
+          <input type="color" id="color" value="#FF0000">
+        </div>
+        <div>
+          <label>Brightness (0-255)</label>
+          <input type="number" id="brightness" min="0" max="255" value="255">
+        </div>
+        <div class="items-end">
+          <button class="btn-green" id="addUpdateBtn" onclick="addOrUpdateSequence()" style="width: 100%;">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span id="addUpdateText">Add</span>
+          </button>
+        </div>
+      </div>
+      <div id="editControls" style="margin-top: 12px; display: none;">
+        <div class="flex">
+          <button class="btn-gray" onclick="cancelEdit()">Cancel Edit</button>
+          <button class="btn-blue" onclick="playFromSelectedEntry()">
+            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            Play From This Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV Import/Export -->
+    <div class="card">
+      <h2>Import/Export</h2>
+      <div class="flex">
+        <label class="file-label">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          Import CSV
+          <input type="file" class="file-input" accept=".csv" onchange="handleCSVUpload(event)">
+        </label>
+        <button class="btn-purple" onclick="exportCSV()">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="card">
+      <h2>Playback Test</h2>
+      <div class="flex" style="margin-bottom: 12px; align-items: center;">
+        <button class="btn-blue" id="playPauseBtn" onclick="togglePlayPause()">
+          <svg class="icon" id="playIcon" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <svg class="icon" id="pauseIcon" fill="currentColor" viewBox="0 0 24 24" style="display: none;">
+            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+          </svg>
+          <span id="playPauseText">Play</span>
+        </button>
+        <button class="btn-gray" onclick="handleReset()">Reset</button>
+        <div class="timecode" id="currentTimecode">00:00:00.000</div>
+      </div>
+      <div class="flex" style="margin-bottom: 12px; align-items: center;">
+        <input type="text" id="playFromTime" placeholder="Play from (HH:MM:SS.mmm)" style="width: 200px; padding: 8px;">
+        <button class="btn-green" onclick="playFromTimecode()">
+          <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          Play From
+        </button>
+        <input type="text" id="jumpToTime" placeholder="Jump to (HH:MM:SS.mmm)" style="width: 200px; padding: 8px;">
+        <button class="btn-orange" onclick="jumpToTimecode()">Jump</button>
+      </div>
+      <div class="progress-bar" onclick="seekToPosition(event)">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Sequence List -->
+    <div class="card">
+      <h2>Current Sequence (<span id="sequenceCount">0</span>/150)</h2>
+      <div class="sequence-list" id="sequenceList">
+        <div class="empty-state">No sequences added yet</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let sequences = [];
+    let currentTime = 0;
+    let isPlaying = false;
+    let timerInterval = null;
+    let startTime = 0;
+    let devices = [];
+    let savedSequences = [];
+    let editingSequenceId = null;
+
+    function parseTimecode(timecode) {
+      const parts = timecode.split(':');
+      const [sec, ms] = parts[2].split('.');
+      return (parseInt(parts[0]) * 3600000) +
+             (parseInt(parts[1]) * 60000) +
+             (parseInt(sec) * 1000) +
+             parseInt(ms);
+    }
+
+    function formatTimecode(ms) {
+      const hours = Math.floor(ms / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const milliseconds = ms % 1000;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+    }
+
+    // Device Management
+    function addDevice() {
+      const name = document.getElementById('deviceName').value.trim();
+      const ip = document.getElementById('deviceIP').value.trim();
+
+      if (!name || !ip) {
+        alert('Please enter both device name and IP address');
+        return;
+      }
+
+      const device = {
+        id: Date.now(),
+        name: name,
+        ip: ip,
+        connected: false
+      };
+
+      devices.push(device);
+      document.getElementById('deviceName').value = '';
+      document.getElementById('deviceIP').value = '';
+      renderDevices();
+    }
+
+    function deleteDevice(id) {
+      devices = devices.filter(d => d.id !== id);
+      renderDevices();
+    }
+
+    async function testDeviceConnection(id) {
+      const device = devices.find(d => d.id === id);
+      if (!device) return;
+
+      try {
+        await fetch(`http://${device.ip}/ping`, { mode: 'no-cors' });
+        device.connected = true;
+        renderDevices();
+      } catch (err) {
+        device.connected = false;
+        renderDevices();
+        alert(`Failed to connect to ${device.name}`);
+      }
+    }
+
+    async function testAllConnections() {
+      for (const device of devices) {
+        try {
+          await fetch(`http://${device.ip}/ping`, { mode: 'no-cors' });
+          device.connected = true;
+        } catch (err) {
+          device.connected = false;
+        }
+      }
+      renderDevices();
+      const connectedCount = devices.filter(d => d.connected).length;
+      alert(`${connectedCount} of ${devices.length} devices connected`);
+    }
+
+    function renderDevices() {
+      const listEl = document.getElementById('deviceList');
+
+      if (devices.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">No devices added yet</div>';
+        return;
+      }
+
+      listEl.innerHTML = devices.map(device => `
+        <div class="device-item ${device.connected ? 'connected' : ''}">
+          <div style="flex: 1;">
+            <div class="device-name">${device.name}</div>
+            <div class="device-ip">${device.ip}</div>
+          </div>
+          ${device.connected ? '<span style="color: #10b981;">✓ Connected</span>' : '<span style="color: #ef4444;">✗ Disconnected</span>'}
+          <button class="btn-blue" onclick="testDeviceConnection(${device.id})" style="padding: 6px 12px;">Test</button>
+          <button class="ml-auto btn-red" onclick="deleteDevice(${device.id})" style="padding: 6px; background: transparent;">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function startSequenceOnAllDevices() {
+      if (sequences.length === 0) {
+        alert('No sequence to send');
+        return;
+      }
+
+      const connectedDevices = devices.filter(d => d.connected);
+      if (connectedDevices.length === 0) {
+        alert('No devices connected');
+        return;
+      }
+
+      const payload = sequences.map(s => {
+        const rgb = hexToRgb(s.color);
+        return {
+          time: s.timeMs,
+          r: rgb.r,
+          g: rgb.g,
+          b: rgb.b,
+          brightness: s.brightness
+        };
+      });
+
+      let successCount = 0;
+      for (const device of connectedDevices) {
+        try {
+          await fetch(`http://${device.ip}/start`, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sequence: payload })
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to start sequence on ${device.name}:`, err);
+        }
+      }
+
+      alert(`Sequence started on ${successCount} of ${connectedDevices.length} devices`);
+    }
+
+    // Save/Load Sequences
+    function saveCurrentSequence() {
+      const name = document.getElementById('sequenceName').value.trim();
+
+      if (!name) {
+        alert('Please enter a sequence name');
+        return;
+      }
+
+      if (sequences.length === 0) {
+        alert('No sequence to save');
+        return;
+      }
+
+      if (savedSequences.length >= 10) {
+        alert('Maximum 10 saved sequences reached. Delete one to save more.');
+        return;
+      }
+
+      const saved = {
+        id: Date.now(),
+        name: name,
+        sequences: JSON.parse(JSON.stringify(sequences))
+      };
+
+      savedSequences.push(saved);
+      document.getElementById('sequenceName').value = '';
+      renderSavedSequences();
+    }
+
+    function loadSequence(id) {
+      const saved = savedSequences.find(s => s.id === id);
+      if (!saved) return;
+
+      sequences = JSON.parse(JSON.stringify(saved.sequences));
+      renderSequences();
+      renderSavedSequences();
+    }
+
+    function deleteSavedSequence(id) {
+      savedSequences = savedSequences.filter(s => s.id !== id);
+      renderSavedSequences();
+    }
+
+    function renderSavedSequences() {
+      const listEl = document.getElementById('savedSequencesList');
+
+      if (savedSequences.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">No saved sequences yet</div>';
+        return;
+      }
+
+      listEl.innerHTML = savedSequences.map(saved => {
+        const isActive = JSON.stringify(sequences) === JSON.stringify(saved.sequences);
+        return `
+          <div class="saved-sequence-item ${isActive ? 'active' : ''}">
+            <div style="flex: 1;">
+              <div style="font-weight: 600;">${saved.name}</div>
+              <div style="color: #9ca3af; font-size: 14px;">${saved.sequences.length} entries</div>
+            </div>
+            ${isActive ? '<span style="color: #3b82f6;">✓ Active</span>' : ''}
+            <button class="btn-blue" onclick="loadSequence(${saved.id})" style="padding: 6px 12px;">Load</button>
+            <button class="ml-auto btn-red" onclick="deleteSavedSequence(${saved.id})" style="padding: 6px; background: transparent;">
+              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addSequence() {
+      if (sequences.length >= 150) {
+        alert('Maximum 150 entries reached');
+        return;
+      }
+
+      const timecode = document.getElementById('timecode').value;
+      const color = document.getElementById('color').value;
+      const brightness = parseInt(document.getElementById('brightness').value);
+
+      const newSeq = {
+        id: Date.now(),
+        timecode: timecode,
+        timeMs: parseTimecode(timecode),
+        color: color,
+        brightness: brightness
+      };
+
+      sequences.push(newSeq);
+      sequences.sort((a, b) => a.timeMs - b.timeMs);
+
+      document.getElementById('timecode').value = '00:00:00.000';
+      document.getElementById('color').value = '#FF0000';
+      document.getElementById('brightness').value = '255';
+
+      renderSequences();
+      renderSavedSequences();
+    }
+
+    function addOrUpdateSequence() {
+      if (editingSequenceId !== null) {
+        updateSequence();
+      } else {
+        addSequence();
+      }
+    }
+
+    function selectSequenceForEdit(id) {
+      const seq = sequences.find(s => s.id === id);
+      if (!seq) return;
+
+      editingSequenceId = id;
+      document.getElementById('timecode').value = seq.timecode;
+      document.getElementById('color').value = seq.color;
+      document.getElementById('brightness').value = seq.brightness;
+
+      document.getElementById('entryModeTitle').textContent = 'Edit Sequence Entry';
+      document.getElementById('editingIndicator').style.display = 'inline';
+      document.getElementById('addUpdateText').textContent = 'Update';
+      document.getElementById('addUpdateBtn').className = 'btn-orange';
+      document.getElementById('editControls').style.display = 'block';
+
+      renderSequences();
+    }
+
+    function updateSequence() {
+      const seq = sequences.find(s => s.id === editingSequenceId);
+      if (!seq) return;
+
+      seq.timecode = document.getElementById('timecode').value;
+      seq.timeMs = parseTimecode(seq.timecode);
+      seq.color = document.getElementById('color').value;
+      seq.brightness = parseInt(document.getElementById('brightness').value);
+
+      sequences.sort((a, b) => a.timeMs - b.timeMs);
+
+      cancelEdit();
+      renderSequences();
+      renderSavedSequences();
+    }
+
+    function cancelEdit() {
+      editingSequenceId = null;
+      document.getElementById('timecode').value = '00:00:00.000';
+      document.getElementById('color').value = '#FF0000';
+      document.getElementById('brightness').value = '255';
+
+      document.getElementById('entryModeTitle').textContent = 'Add Sequence Entry';
+      document.getElementById('editingIndicator').style.display = 'none';
+      document.getElementById('addUpdateText').textContent = 'Add';
+      document.getElementById('addUpdateBtn').className = 'btn-green';
+      document.getElementById('editControls').style.display = 'none';
+
+      renderSequences();
+    }
+
+    function deleteSequence(id) {
+      sequences = sequences.filter(s => s.id !== id);
+      renderSequences();
+      renderSavedSequences();
+    }
+
+    function renderSequences() {
+      const listEl = document.getElementById('sequenceList');
+      const countEl = document.getElementById('sequenceCount');
+
+      countEl.textContent = sequences.length;
+
+      if (sequences.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">No sequences added yet</div>';
+        return;
+      }
+
+      listEl.innerHTML = sequences.map(seq => {
+        const isActive = currentTime >= seq.timeMs && currentTime < (seq.timeMs + 1000);
+        const isSelected = editingSequenceId === seq.id;
+        return `
+          <div class="sequence-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" data-id="${seq.id}" onclick="selectSequenceForEdit(${seq.id})">
+            <div style="font-family: monospace;">${seq.timecode}</div>
+            <div class="color-preview" style="background-color: ${seq.color};"></div>
+            <div style="font-size: 14px; color: #9ca3af;">Brightness: ${seq.brightness}</div>
+            <button class="ml-auto btn-red" onclick="event.stopPropagation(); deleteSequence(${seq.id})" style="padding: 8px; background: transparent;">
+              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        handlePause();
+      } else {
+        handlePlay();
+      }
+    }
+
+    function handlePlay() {
+      isPlaying = true;
+      startTime = Date.now() - currentTime;
+
+      document.getElementById('playIcon').style.display = 'none';
+      document.getElementById('pauseIcon').style.display = 'block';
+      document.getElementById('playPauseText').textContent = 'Pause';
+
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        currentTime = elapsed;
+        updatePlayback();
+      }, 50);
+    }
+
+    function handlePause() {
+      isPlaying = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      document.getElementById('playIcon').style.display = 'block';
+      document.getElementById('pauseIcon').style.display = 'none';
+      document.getElementById('playPauseText').textContent = 'Play';
+    }
+
+    function handleReset() {
+      handlePause();
+      currentTime = 0;
+      updatePlayback();
+    }
+
+    function jumpToTimecode() {
+      const timecode = document.getElementById('jumpToTime').value.trim();
+      if (!timecode) return;
+
+      try {
+        const ms = parseTimecode(timecode);
+        currentTime = ms;
+        if (isPlaying) {
+          startTime = Date.now() - currentTime;
+        }
+        updatePlayback();
+      } catch (err) {
+        alert('Invalid timecode format. Use HH:MM:SS.mmm');
+      }
+    }
+
+    function playFromTimecode() {
+      const timecode = document.getElementById('playFromTime').value.trim();
+      if (!timecode) {
+        alert('Please enter a timecode');
+        return;
+      }
+
+      try {
+        const ms = parseTimecode(timecode);
+        currentTime = ms;
+        updatePlayback();
+
+        // Start playing if not already playing
+        if (!isPlaying) {
+          handlePlay();
+        } else {
+          startTime = Date.now() - currentTime;
+        }
+      } catch (err) {
+        alert('Invalid timecode format. Use HH:MM:SS.mmm');
+      }
+    }
+
+    function playFromSelectedEntry() {
+      if (editingSequenceId === null) return;
+
+      const seq = sequences.find(s => s.id === editingSequenceId);
+      if (!seq) return;
+
+      currentTime = seq.timeMs;
+      updatePlayback();
+
+      if (!isPlaying) {
+        handlePlay();
+      } else {
+        startTime = Date.now() - currentTime;
+      }
+    }
+
+    function seekToPosition(event) {
+      if (sequences.length === 0) return;
+
+      const progressBar = event.currentTarget;
+      const rect = progressBar.getBoundingClientRect();
+      const percent = (event.clientX - rect.left) / rect.width;
+      const maxTime = sequences[sequences.length - 1].timeMs;
+
+      currentTime = Math.max(0, Math.min(maxTime, percent * maxTime));
+
+      if (isPlaying) {
+        startTime = Date.now() - currentTime;
+      }
+
+      updatePlayback();
+    }
+
+    function updatePlayback() {
+      document.getElementById('currentTimecode').textContent = formatTimecode(currentTime);
+
+      if (sequences.length > 0) {
+        const maxTime = sequences[sequences.length - 1].timeMs;
+        const progress = Math.min(100, (currentTime / maxTime) * 100);
+        document.getElementById('progressFill').style.width = progress + '%';
+      }
+
+      const activeSeq = [...sequences].reverse().find(s => s.timeMs <= currentTime);
+      if (activeSeq) {
+        const connectedDevices = devices.filter(d => d.connected);
+        connectedDevices.forEach(device => {
+          sendToESP32(device.ip, activeSeq);
+        });
+      }
+
+      renderSequences();
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 };
+    }
+
+    async function sendToESP32(ip, seq) {
+      if (!ip) return;
+
+      try {
+        const rgb = hexToRgb(seq.color);
+        await fetch(`http://${ip}/setcolor?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}&brightness=${seq.brightness}`, {
+          mode: 'no-cors'
+        });
+      } catch (err) {
+        console.error('Failed to send to ESP32:', err);
+      }
+    }
+
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const newSeqs = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const [timecode, color, brightness] = line.split(',').map(s => s.trim());
+          if (timecode && color) {
+            newSeqs.push({
+              id: Date.now() + i,
+              timecode: timecode,
+              timeMs: parseTimecode(timecode),
+              color: color.startsWith('#') ? color : `#${color}`,
+              brightness: brightness ? parseInt(brightness) : 255
+            });
+          }
+        }
+
+        sequences = [...sequences, ...newSeqs].sort((a, b) => a.timeMs - b.timeMs).slice(0, 150);
+        renderSequences();
+        renderSavedSequences();
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      const csv = ['timecode,color,brightness', ...sequences.map(s =>
+        `${s.timecode},${s.color},${s.brightness}`
+      )].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'neopixel_sequence.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize
+    renderDevices();
+    renderSavedSequences();
+    renderSequences();
+  </script>
+</body>
+</html>
