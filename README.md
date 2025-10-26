@@ -2,10 +2,11 @@
 
 You will need the following:
 
-- ESP32, pretty much any you can find one on a retail store, but preferably the Seeed Studio XIAO ESP32C3 or other small one that can fit inside a stick.  
+- ESP32, pretty much any one can find in a retail store, but preferably the Seeed Studio XIAO ESP32C3 or other small one that can fit inside a stick.  
 - Power Source, currenly this one runs off a battery bank but anything that can power the ESP32 + a power budget of ~5W for LEDs
 - NeoPixel Ring LED or other LED that can be controlled by ESP32
-- A 3D printed stick of choice with space to hide the electronics. 
+- A 3D printed stick of choice with space to hide the electronics.
+- If soldering is an issue look for some that are pre-wired and can easily plug into one of the data pin headers.
 ## Step 1. 
 Load the Arduino sketch into the IDE and connect your ESP32. Modify the Wi-Fi Credentials with yours, set the number of LEDs and upload the sketch.
         - Make sure you set the number of LEDs in NUM_LED to however many you have. 
