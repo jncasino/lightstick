@@ -193,6 +193,7 @@
       height: 8px;
       overflow: hidden;
       cursor: pointer;
+      position: relative;
     }
 
     .progress-fill {
@@ -200,6 +201,27 @@
       height: 8px;
       border-radius: 9999px;
       transition: width 0.1s;
+    }
+
+    .scrubber {
+      position: absolute;
+      top: -4px;
+      width: 16px;
+      height: 16px;
+      background-color: #ffffff;
+      border: 2px solid #3b82f6;
+      border-radius: 50%;
+      cursor: grab;
+      transform: translateX(-50%);
+      transition: transform 0.1s;
+    }
+
+    .scrubber:hover {
+      transform: translateX(-50%) scale(1.2);
+    }
+
+    .scrubber:active {
+      cursor: grabbing;
     }
 
     .timecode {
@@ -232,6 +254,19 @@
     .sequence-item.active {
       background-color: #1e3a8a;
       border: 1px solid #3b82f6;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    @keyframes rainbow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .sequence-item.selected {
@@ -384,6 +419,10 @@
         <div>
           <label>Color</label>
           <input type="color" id="color" value="#FF0000">
+          <label style="margin-top: 8px;">
+            <input type="checkbox" id="rainbowEffect" style="margin-right: 8px;">
+            Rainbow Effect
+          </label>
         </div>
         <div>
           <label>Brightness (0-255)</label>
@@ -458,8 +497,9 @@
         <input type="text" id="jumpToTime" placeholder="Jump to (HH:MM:SS.mmm)" style="width: 200px; padding: 8px;">
         <button class="btn-orange" onclick="jumpToTimecode()">Jump</button>
       </div>
-      <div class="progress-bar" onclick="seekToPosition(event)">
+      <div class="progress-bar" onclick="seekToPosition(event)" id="progressBar">
         <div class="progress-fill" id="progressFill"></div>
+        <div class="scrubber" id="scrubber" onmousedown="startScrubbing(event)"></div>
       </div>
     </div>
 
@@ -481,6 +521,8 @@
     let devices = [];
     let savedSequences = [];
     let editingSequenceId = null;
+    let isScrubbing = false;
+    let rainbowInterval = null;
 
     function parseTimecode(timecode) {
       const parts = timecode.split(':');
@@ -497,6 +539,43 @@
       const seconds = Math.floor((ms % 60000) / 1000);
       const milliseconds = ms % 1000;
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+    }
+
+    function hslToRgb(h, s, l) {
+      h /= 360;
+      s /= 100;
+      l /= 100;
+      
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      
+      let r, g, b;
+      if (s === 0) {
+        r = g = b = l;
+      } else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      
+      return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+      };
+    }
+
+    function getRainbowColor(timeOffset = 0) {
+      const hue = (Date.now() / 50 + timeOffset) % 360;
+      return hslToRgb(hue, 100, 50);
     }
 
     // Device Management
@@ -703,13 +782,15 @@
       const timecode = document.getElementById('timecode').value;
       const color = document.getElementById('color').value;
       const brightness = parseInt(document.getElementById('brightness').value);
+      const rainbowEffect = document.getElementById('rainbowEffect').checked;
 
       const newSeq = {
         id: Date.now(),
         timecode: timecode,
         timeMs: parseTimecode(timecode),
         color: color,
-        brightness: brightness
+        brightness: brightness,
+        rainbowEffect: rainbowEffect
       };
 
       sequences.push(newSeq);
@@ -718,6 +799,7 @@
       document.getElementById('timecode').value = '00:00:00.000';
       document.getElementById('color').value = '#FF0000';
       document.getElementById('brightness').value = '255';
+      document.getElementById('rainbowEffect').checked = false;
 
       renderSequences();
       renderSavedSequences();
@@ -739,6 +821,7 @@
       document.getElementById('timecode').value = seq.timecode;
       document.getElementById('color').value = seq.color;
       document.getElementById('brightness').value = seq.brightness;
+      document.getElementById('rainbowEffect').checked = seq.rainbowEffect || false;
 
       document.getElementById('entryModeTitle').textContent = 'Edit Sequence Entry';
       document.getElementById('editingIndicator').style.display = 'inline';
@@ -757,6 +840,7 @@
       seq.timeMs = parseTimecode(seq.timecode);
       seq.color = document.getElementById('color').value;
       seq.brightness = parseInt(document.getElementById('brightness').value);
+      seq.rainbowEffect = document.getElementById('rainbowEffect').checked;
 
       sequences.sort((a, b) => a.timeMs - b.timeMs);
 
@@ -770,6 +854,7 @@
       document.getElementById('timecode').value = '00:00:00.000';
       document.getElementById('color').value = '#FF0000';
       document.getElementById('brightness').value = '255';
+      document.getElementById('rainbowEffect').checked = false;
 
       document.getElementById('entryModeTitle').textContent = 'Add Sequence Entry';
       document.getElementById('editingIndicator').style.display = 'none';
@@ -800,11 +885,18 @@
       listEl.innerHTML = sequences.map(seq => {
         const isActive = currentTime >= seq.timeMs && currentTime < (seq.timeMs + 1000);
         const isSelected = editingSequenceId === seq.id;
+        const colorStyle = seq.rainbowEffect ? 
+          `background: linear-gradient(45deg, ${seq.color}, #ff0000, #00ff00, #0000ff, ${seq.color}); background-size: 400% 400%; animation: rainbow 2s ease infinite;` : 
+          `background-color: ${seq.color};`;
+        
         return `
           <div class="sequence-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" data-id="${seq.id}" onclick="selectSequenceForEdit(${seq.id})">
             <div style="font-family: monospace;">${seq.timecode}</div>
-            <div class="color-preview" style="background-color: ${seq.color};"></div>
-            <div style="font-size: 14px; color: #9ca3af;">Brightness: ${seq.brightness}</div>
+            <div class="color-preview" style="${colorStyle}"></div>
+            <div style="font-size: 14px; color: #9ca3af;">
+              Brightness: ${seq.brightness}
+              ${seq.rainbowEffect ? '<br><span style="color: #9333ea;">🌈 Rainbow</span>' : ''}
+            </div>
             <button class="ml-auto btn-red" onclick="event.stopPropagation(); deleteSequence(${seq.id})" style="padding: 8px; background: transparent;">
               <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -912,7 +1004,7 @@
     }
 
     function seekToPosition(event) {
-      if (sequences.length === 0) return;
+      if (sequences.length === 0 || isScrubbing) return;
 
       const progressBar = event.currentTarget;
       const rect = progressBar.getBoundingClientRect();
@@ -928,6 +1020,45 @@
       updatePlayback();
     }
 
+    function startScrubbing(event) {
+      event.stopPropagation();
+      isScrubbing = true;
+      
+      const scrubber = document.getElementById('scrubber');
+      const progressBar = document.getElementById('progressBar');
+      
+      function handleMouseMove(e) {
+        const rect = progressBar.getBoundingClientRect();
+        const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const maxTime = sequences.length > 0 ? sequences[sequences.length - 1].timeMs : 0;
+        
+        currentTime = percent * maxTime;
+        updateScrubberPosition();
+        updatePlayback();
+      }
+      
+      function handleMouseUp() {
+        isScrubbing = false;
+        if (isPlaying) {
+          startTime = Date.now() - currentTime;
+        }
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      }
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    function updateScrubberPosition() {
+      if (sequences.length === 0) return;
+      
+      const maxTime = sequences[sequences.length - 1].timeMs;
+      const percent = maxTime > 0 ? (currentTime / maxTime) * 100 : 0;
+      const scrubber = document.getElementById('scrubber');
+      scrubber.style.left = percent + '%';
+    }
+
     function updatePlayback() {
       document.getElementById('currentTimecode').textContent = formatTimecode(currentTime);
 
@@ -935,6 +1066,7 @@
         const maxTime = sequences[sequences.length - 1].timeMs;
         const progress = Math.min(100, (currentTime / maxTime) * 100);
         document.getElementById('progressFill').style.width = progress + '%';
+        updateScrubberPosition();
       }
 
       const activeSeq = [...sequences].reverse().find(s => s.timeMs <= currentTime);
@@ -961,10 +1093,16 @@
       if (!ip) return;
 
       try {
-        const rgb = hexToRgb(seq.color);
-        await fetch(`http://${ip}/setcolor?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}&brightness=${seq.brightness}`, {
-          mode: 'no-cors'
-        });
+        if (seq.rainbowEffect) {
+          await fetch(`http://${ip}/rainbow?brightness=${seq.brightness}`, {
+            mode: 'no-cors'
+          });
+        } else {
+          const rgb = hexToRgb(seq.color);
+          await fetch(`http://${ip}/setcolor?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}&brightness=${seq.brightness}`, {
+            mode: 'no-cors'
+          });
+        }
       } catch (err) {
         console.error('Failed to send to ESP32:', err);
       }
@@ -984,14 +1122,15 @@
           const line = lines[i].trim();
           if (!line) continue;
 
-          const [timecode, color, brightness] = line.split(',').map(s => s.trim());
+          const [timecode, color, brightness, rainbowEffect] = line.split(',').map(s => s.trim());
           if (timecode && color) {
             newSeqs.push({
               id: Date.now() + i,
               timecode: timecode,
               timeMs: parseTimecode(timecode),
               color: color.startsWith('#') ? color : `#${color}`,
-              brightness: brightness ? parseInt(brightness) : 255
+              brightness: brightness ? parseInt(brightness) : 255,
+              rainbowEffect: rainbowEffect === 'true' || rainbowEffect === '1'
             });
           }
         }
@@ -1004,8 +1143,8 @@
     }
 
     function exportCSV() {
-      const csv = ['timecode,color,brightness', ...sequences.map(s =>
-        `${s.timecode},${s.color},${s.brightness}`
+      const csv = ['timecode,color,brightness,rainbowEffect', ...sequences.map(s =>
+        `${s.timecode},${s.color},${s.brightness},${s.rainbowEffect || false}`
       )].join('\n');
 
       const blob = new Blob([csv], { type: 'text/csv' });
